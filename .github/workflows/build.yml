@@ -1,0 +1,60 @@
+name: Build WiFiman RPM from Local DEB
+
+on:
+  push:
+    paths:
+      - 'deb/*.deb'
+  workflow_dispatch: # Żebyś mógł odpalić ręcznie w razie czego
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Version and Filename
+        id: info
+        run: |
+          DEB_PATH=$(ls deb/*.deb | head -n 1)
+          FILENAME=$(basename "$DEB_PATH")
+          # Wyciąga X.Y.Z z nazwy pliku
+          VERSION=$(echo $FILENAME | grep -oP '\d+\.\d+\.\d+')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "deb_path=$DEB_PATH" >> $GITHUB_OUTPUT
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+
+      - name: Build RPM in Fedora Container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: fedora:latest
+          run: |
+            dnf install -y rpm-build wget binutils
+            VERSION=${{ steps.info.outputs.version }}
+            DEB_PATH=${{ steps.info.outputs.deb_path }}
+            
+            # Wypakowanie DEB
+            ar x "$DEB_PATH"
+            tar xf data.tar.gz
+            
+            # Przygotowanie rpmbuild
+            mkdir -p ~/rpmbuild/{SOURCES,SPECS,BUILD,RPMS,SRPMS}
+            cp wifiman-desktop.spec ~/rpmbuild/SPECS/
+            
+            # Budowanie paczki
+            rpmbuild -bb ~/rpmbuild/SPECS/wifiman-desktop.spec \
+              --define "_topdir $HOME/rpmbuild" \
+              --define "_version ${VERSION}"
+            
+            # Kopiowanie gotowej paczki do workspace
+            cp ~/rpmbuild/RPMS/x86_64/*.rpm /github/workspace/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.info.outputs.version }}
+          files: "*.rpm"
+          body: "Repackaged WiFiman Desktop v${{ steps.info.outputs.version }} for Fedora/RHEL."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
