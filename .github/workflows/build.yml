@@ -29,26 +29,22 @@ jobs:
           VERSION=$(echo $FILENAME | grep -oP '\d+\.\d+\.\d+')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          # Wypakowanie
+          # Wypakowanie w głównym katalogu
           ar x "$DEB_PATH"
           tar xf data.tar.gz
 
-          # Przygotowanie struktury rpmbuild
+          # Przygotowanie struktur rpmbuild
           mkdir -p ~/rpmbuild/{SOURCES,SPECS,BUILD,RPMS,SRPMS}
-          
-          # KLUCZOWY KROK: Kopiujemy wypakowane usr/ do katalogu budowania
-          # rpmbuild domyślnie szuka plików w BUILD/%{name}-%{version}
-          mkdir -p ~/rpmbuild/BUILD/wifiman-desktop-${VERSION}
-          cp -r usr ~/rpmbuild/BUILD/wifiman-desktop-${VERSION}/
-
           cp wifiman-desktop.spec ~/rpmbuild/SPECS/
           
-          # Budowanie
+          # Budowanie z przekazaniem ścieżki workspace
           rpmbuild -bb ~/rpmbuild/SPECS/wifiman-desktop.spec \
             --define "_topdir $HOME/rpmbuild" \
-            --define "_version ${VERSION}"
+            --define "_version ${VERSION}" \
+            --define "_ws $GITHUB_WORKSPACE"
           
           cp ~/rpmbuild/RPMS/x86_64/*.rpm .
+
 
       - name: Create GitHub Release
         # Ten krok wyjdzie z kontenera i użyje standardowego runnera do uploadu

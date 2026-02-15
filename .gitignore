@@ -1,0 +1,15 @@
+# Ignore everything in deb/
+deb/*
+
+# Do not ignore .deb files
+!deb/*.deb
+
+# Do not ignore .gitkeep if you want to keep the folder structure
+!deb/.gitkeep
+
+# Ignore build artifacts
+*.rpm
+usr/
+data.tar.gz
+control.tar.gz
+debian-binary

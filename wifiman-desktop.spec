@@ -17,17 +17,16 @@ mkdir -p %{buildroot}/usr/share/applications
 mkdir -p %{buildroot}/usr/share/icons/hicolor
 mkdir -p %{buildroot}%{_unitdir}
 
-# Kopiowanie plików rozpakowanych przez CI
-cp usr/bin/wifiman-desktop %{buildroot}/usr/bin/
-cp -r usr/lib/wifiman-desktop/* %{buildroot}/usr/lib/wifiman-desktop/
-cp -r usr/share/applications/* %{buildroot}/usr/share/applications/
-cp -r usr/share/icons/hicolor/* %{buildroot}/usr/share/icons/hicolor/
+# Używamy ścieżki zdefiniowanej w workflow (_ws)
+cp %{_ws}/usr/bin/wifiman-desktop %{buildroot}/usr/bin/
+cp -r %{_ws}/usr/lib/wifiman-desktop/* %{buildroot}/usr/lib/wifiman-desktop/
+cp -r %{_ws}/usr/share/applications/* %{buildroot}/usr/share/applications/
+cp -r %{_ws}/usr/share/icons/hicolor/* %{buildroot}/usr/share/icons/hicolor/
 
-# Naprawa serwisu systemd
+# Przeniesienie serwisu
 mv %{buildroot}/usr/lib/wifiman-desktop/wifiman-desktop.service %{buildroot}%{_unitdir}/
 
 %post
-# SELinux: Nadajemy kontekst unconfined_exec_t, żeby Teleport mógł działać
 if [ $1 -eq 1 ] ; then
     semanage fcontext -a -t unconfined_exec_t "/usr/lib/wifiman-desktop/wifiman-desktopd" 2>/dev/null || :
     semanage fcontext -a -t unconfined_exec_t "/usr/lib/wifiman-desktop/wireguard-go" 2>/dev/null || :
@@ -44,4 +43,5 @@ fi
 
 %changelog
 * Sun Feb 15 2026 Dawid <dawid@example.com> - 1.2.8-1
-- Automatic build from deb source
+- Fix build paths and add SELinux contexts
+
