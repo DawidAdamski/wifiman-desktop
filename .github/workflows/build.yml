@@ -16,8 +16,7 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf install -y rpm-build binutils
-          # ar jest w binutils, rpmbuild w rpm-build
+          dnf install -y rpm-build binutils systemd-rpm-macros
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,19 +24,23 @@ jobs:
       - name: Extract Version and Build RPM
         id: info
         run: |
-          # Znajdź plik deb
           DEB_PATH=$(ls deb/*.deb | head -n 1)
           FILENAME=$(basename "$DEB_PATH")
           VERSION=$(echo $FILENAME | grep -oP '\d+\.\d+\.\d+')
-          
-          echo "Building version: $VERSION"
-          
-          # Wypakowanie (jesteśmy wewnątrz kontenera Fedora)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Wypakowanie
           ar x "$DEB_PATH"
           tar xf data.tar.gz
-          
-          # Przygotowanie rpmbuild
+
+          # Przygotowanie struktury rpmbuild
           mkdir -p ~/rpmbuild/{SOURCES,SPECS,BUILD,RPMS,SRPMS}
+          
+          # KLUCZOWY KROK: Kopiujemy wypakowane usr/ do katalogu budowania
+          # rpmbuild domyślnie szuka plików w BUILD/%{name}-%{version}
+          mkdir -p ~/rpmbuild/BUILD/wifiman-desktop-${VERSION}
+          cp -r usr ~/rpmbuild/BUILD/wifiman-desktop-${VERSION}/
+
           cp wifiman-desktop.spec ~/rpmbuild/SPECS/
           
           # Budowanie
@@ -45,11 +48,7 @@ jobs:
             --define "_topdir $HOME/rpmbuild" \
             --define "_version ${VERSION}"
           
-          # Przeniesienie gotowej paczki do folderu głównego
           cp ~/rpmbuild/RPMS/x86_64/*.rpm .
-          
-          # Przekazanie wersji do kolejnych kroków
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         # Ten krok wyjdzie z kontenera i użyje standardowego runnera do uploadu

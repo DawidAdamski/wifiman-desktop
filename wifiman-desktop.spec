@@ -42,3 +42,6 @@ fi
 /usr/share/applications/wifiman-desktop.desktop
 /usr/share/icons/hicolor/*/apps/wifiman-desktop.png
 
+%changelog
+* Sun Feb 15 2026 Dawid <dawid@example.com> - 1.2.8-1
+- Automatic build from deb source
