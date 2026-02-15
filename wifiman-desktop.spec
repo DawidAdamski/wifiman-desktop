@@ -17,9 +17,13 @@ mkdir -p %{buildroot}/usr/share/applications
 mkdir -p %{buildroot}/usr/share/icons/hicolor
 mkdir -p %{buildroot}%{_unitdir}
 
-# Używamy ścieżki zdefiniowanej w workflow (_ws)
+# Kopiowanie binarki GUI
 cp %{_ws}/usr/bin/wifiman-desktop %{buildroot}/usr/bin/
-cp -r %{_ws}/usr/lib/wifiman-desktop/* %{buildroot}/usr/lib/wifiman-desktop/
+
+# KLUCZOWA ZMIANA: Kropka po slashu kopiuje wszystko, w tym ukryte pliki .env
+cp -a %{_ws}/usr/lib/wifiman-desktop/. %{buildroot}/usr/lib/wifiman-desktop/
+
+# Reszta bez zmian
 cp -r %{_ws}/usr/share/applications/* %{buildroot}/usr/share/applications/
 cp -r %{_ws}/usr/share/icons/hicolor/* %{buildroot}/usr/share/icons/hicolor/
 
